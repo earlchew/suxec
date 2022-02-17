@@ -1,0 +1,16 @@
+# https://stackoverflow.com/a/52731194
+#
+# ==1651639== 24 bytes in 1 blocks are possibly lost in loss record 17 of 28
+# ==1651639==    at 0x483877F: malloc (vg_replace_malloc.c:307)
+# ==1651639==    by 0x494C01F: tsearch (tsearch.c:338)
+# ==1651639==    by 0x488FFFD: __add_to_environ (setenv.c:231)
+# ==1651639==    by 0x484122F: setenv (vg_replace_strmem.c:2133)
+# ==1651639==    by 0x109944: license_program (suxec.c:777)
+# ==1651639==    by 0x109944: main (suxec.c:831)
+{
+    tsearch
+    Memcheck:Leak
+    match-leak-kinds: possible
+    fun:malloc
+    fun:tsearch
+}
