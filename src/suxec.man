@@ -1,0 +1,161 @@
+.TH SUXEC 1 "Jan 2022" "suxec" "User Commands"
+.SH NAME
+suxec \- run an allow-listed program as another user
+.SH SYNOPSIS
+.B suxec
+[options]
+[--]
+.I [NAME=VALUE ...]
+.I symlink
+.SH DESCRIPTION
+Run an unprivileged program as another user.
+.PP
+.BR suxec
+is privileged helper, in the manner of
+.BR sudo (1),
+that runs specific allow-listed program as another user.
+.BR suxec
+requires each allow-listed program be registered separately.
+.PP
+A licensee and licensor can cooperate to complete
+registration of an allow-listing to allow the licensee
+to run a program owned by the licensor. The registration
+does not require a privileged user to manipulate a
+central database in the manner of
+.BR sudoers (5),
+and
+.BR visudo (8).
+.SH OPTIONS
+.TP
+.B \-\-debug
+Emit debugging output.
+.SH NOTES
+Before executing the program,
+.BR suxec
+removes all environment variables, and establishes the
+following: LOGNAME, PATH, HOME, and SHELL. These environment
+variables are configured in the manner of
+.BR crontab (5).
+Additional environment variables can be established by
+specifying them on the command line.
+.SH VERIFYING REGISTRATIONS
+Before executing the program,
+.BR suxec
+verifies that the command has an associated
+authorised allow-listing registration. The
+following rules are applied to do this:
+.IP \(bu
+The specified command must be a symlink.
+.IP \(bu
+The symlink must be owned by the user invoking the command.
+.IP \(bu
+The symlink must reside in a directory which shares the
+same owner as the regular file resolved by the symlink.
+.IP \(bu
+The symlink must reside in a directory whose name
+starts neither with a dot, nor an at-sign (ie neither . nor @).
+.IP \(bu
+The symlink must reside in a directory whose parent
+directory has mode og=x (ie typically 0711).
+.IP \(bu
+The symlink must resolve to a regular file for which the
+licensor has execute permissions.
+.SH REGISTRATION DIRECTORY
+Each licensor wishing to allow-list trusted licensees
+creates a directory which is used to record allow-list
+registrations. Typically the directory is created in the home
+directory of the licensor with the correct permissions applied.
+.PP
+Suppose Alice, as a licensor, wants to create a registration directory:
+.PP
+.EX
+alice% mkdir -m u=rwx,og=x ~alice/suxec/
+.EE
+.PP
+Importantly the permissions prevent users other than Alice from
+both listing the content of the registration directory, and creating
+objects in the directory.
+.SH REGISTRATIONS FOR USERS
+Typically each trusted licensee has a separate subdirectory
+in the registration directory. This allows the licensor to record
+separate trust relationships for different programs across
+different licensees. Each licensee subdirectory can have
+the usual directory permissions (eg 0755).
+.PP
+.EX
+alice% ls -F ~/alice/suexec
+bob/
+carmen/
+.EE
+.PP
+.SH RECORDING REGISTRATIONS
+Although registrations can be recorded most easily with the
+aid of privileged user (in the manner of
+.BR visudo (7)),
+the registration can be recorded using only unprivileged actions
+provided that the two parties trust each other.
+.PP
+For example, suppose Alice trusts Bob to assume her identity
+and run her program
+.IR postalert .
+.PP
+To begin, Alice creates a submmission directory for Bob to queue
+his request:
+.PP
+.EX
+alice% RUUID=@$(uuidgen)
+alice% mkdir -m a=rwx ~alice/suxec/$RUUID/
+.EE
+.PP
+Nobody other than the licensor can list the parent
+registration directory (ie ~alice/suxec),
+and it is practically impossible for others to guess
+the name of the submission directory.
+.PP
+Alice trusts Bob, and shares the name of the submission directory with him.
+Bob creates a symlink to the target program, and writes that
+symlink in the submission directory:
+.PP
+.EX
+bob% ln -s /home/alice/bin/postalert ~alice/suxec/$RUUID/
+.EE
+.PP
+Alice moves the symlink to a staging directory, and confirms
+that the symlink has the correct content:
+.PP
+.EX
+alice% SUUID=@$(uuidgen)
+alice% mkdir -m u=rwx,og= ~alice/suxec/$SUUID/
+alice% mv ~alice/suxec/$RUUID/postalert ~alice/suxec/$SUUID/
+alice% rm -rf ~alice/suxec/$RUUID/
+alice% ls -l ~alice/suxec/$SUUID/
+.EE
+.PP
+Although Bob could create other content in the submission directory,
+preventing Alice from deleting it, Alice has one more step
+to commit the registration. Because of this, Bob is
+motivated to help Alice by ensuring that nothing prevents her
+from cleaning up the submission directory.
+.PP
+Alice verifies the request by checking the following items:
+.IP \(bu
+The submission directory is deleted
+.IP \(bu
+The symlink is owned by Bob
+.IP \(bu
+The symlink points refers to the correct file that she owns
+.PP
+Once Alice is satisfied that all is correct, she commits the
+symlink to register the allow-listing:
+.PP
+.EX
+alice% mv ~alice/suxec/$SUUID/postalert ~alice/suxec/bob/
+alice% rm -rf ~alice/suxec/$SUUID/
+.EE
+.SH AUTHORS
+.MT earl_chew@yahoo.com
+Earl Chew
+.ME
+.SH SEE ALSO
+.BR sudo (1),
+.BR visudo (7)
