@@ -1,0 +1,6 @@
+#!/usr/bin/env -S awk -f
+
+BEGIN {
+    system("pwd -P");
+    exit 0;
+}

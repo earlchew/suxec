@@ -1,0 +1,7 @@
+#!/usr/bin/env -S awk -f
+
+BEGIN {
+    for (N in ENVIRON)
+        print N "=" ENVIRON[N];
+    exit 0;
+}
